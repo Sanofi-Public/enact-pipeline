@@ -50,7 +50,11 @@ class CellTypistPipeline(ENACT):
         # download celltypist model and predict cell type
         if ".pkl" not in self.cell_typist_model:
             self.cell_typist_model = self.cell_typist_model + ".pkl"
-        models.download_models(model=self.cell_typist_model)
+        # model can be a file on disk
+        elif os.path.isfile(self.cell_typist_model):
+            pass
+        else:
+            models.download_models(model=self.cell_typist_model)
         predictions = celltypist.annotate(adata, model=self.cell_typist_model)
         adata = predictions.to_adata(
             insert_labels=True, insert_conf=True, insert_prob=True
