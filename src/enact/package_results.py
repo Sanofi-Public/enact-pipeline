@@ -61,16 +61,16 @@ class PackageResults(ENACT):
         Returns:
             _type_: _description_
         """
-        os.makedirs(self.sargent_results_dir, exist_ok=True)
+        os.makedirs(self.cellannotation_results_dir, exist_ok=True)
         # Merge the sargent_results_chunks data and gene_to_cell_assignment_chunks_ix_lookup
-        chunks = os.listdir(self.sargent_results_dir)
+        chunks = os.listdir(self.cellannotation_results_dir)
         sargent_results_list = []
         cell_by_gene_list = []
         for chunk_name in chunks:
             if chunk_name in self.files_to_ignore:
                 continue
             cell_labels = pd.read_csv(
-                os.path.join(self.sargent_results_dir, chunk_name)
+                os.path.join(self.cellannotation_results_dir, chunk_name)
             )
             index_lookup = pd.read_csv(
                 os.path.join(self.cell_ix_lookup_dir, chunk_name)
@@ -90,7 +90,7 @@ class PackageResults(ENACT):
         sargent_results_df = sargent_results_df.rename(columns={"x": "cell_type"})
         cell_by_gene_df = pd.concat(cell_by_gene_list, axis=0)
         sargent_results_df.to_csv(
-            os.path.join(self.sargent_results_dir, "merged_results.csv"), index=False
+            os.path.join(self.cellannotation_results_dir, "merged_results.csv"), index=False
         )
         return sargent_results_df, cell_by_gene_df
 
