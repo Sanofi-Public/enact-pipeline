@@ -8,4 +8,4 @@ CONFIG_PATH=$2
 
 # Run ENACT pipeline
 conda activate $PY_ENV_PATH
-python -m src.enact.pipeline --configs_path "$CONFIG_PATH"
+cd "${0%/*}" && python -m src.enact.pipeline --configs_path "$CONFIG_PATH"

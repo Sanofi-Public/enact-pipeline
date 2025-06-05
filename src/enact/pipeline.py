@@ -209,19 +209,20 @@ class ENACT:
         if self.configs["cache_dir"] == "":
             raise ValueError(f"Error: Please provide a value for 'cache_dir'.")
 
-        if self.configs["params"]["cell_annotation_method"] == "celltypist":
-            if self.configs["params"]["cell_typist_model"] == "":
-                raise ValueError(
-                    f"Error: Please provide a value for 'cell_typist_model'. "
-                    "Refer to https://www.celltypist.org/models for a full list of models."
-                )
+        if self.configs["steps"]["cell_type_annotation"]:
+            if self.configs["params"]["cell_annotation_method"] == "celltypist":
+                if self.configs["params"]["cell_typist_model"] == "":
+                    raise ValueError(
+                        f"Error: Please provide a value for 'cell_typist_model'. "
+                        "Refer to https://www.celltypist.org/models for a full list of models."
+                    )
 
-        if self.configs["params"]["cell_annotation_method"] in [
-            "sargent",
-            "cellassign",
-        ]:
-            if self.configs["cell_markers"] == {}:
-                raise ValueError(f"Error: Please provide a value for 'cell_markers'.")
+            if self.configs["params"]["cell_annotation_method"] in [
+                "sargent",
+                "cellassign",
+            ]:
+                if self.configs["cell_markers"] == {}:
+                    raise ValueError(f"Error: Please provide a value for 'cell_markers'.")
 
         # Load input files
         core_paths = ["wsi_path", "visiumhd_h5_path", "tissue_positions_path"]
@@ -393,6 +394,12 @@ class ENACT:
                 n_tiles=n_tiles,
                 normalizer=None
             )
+            #store resulting labels as sparse matrix NPZ - super efficient space wise
+            labels_sparse = sparse.csr_matrix(labels)
+            labels_npz_path = self.cache_dir + "stardist_labels.npz"
+            sparse.save_npz(labels_npz_path, labels_sparse)
+            nr_of_labels = len(np.unique(labels_sparse.data))
+            self.logger.info(f"<run_segmentation> Found {nr_of_labels} objects")
             self.logger.info("<run_segmentation> Successfully segmented cells!")
             return labels, polys
         else:
@@ -899,6 +906,12 @@ class ENACT:
                 self.logger.info("ERROR", self.bin_to_cell_method)
             self.logger.info("<assign_bins_to_cells> convert_adata_to_cell_by_gene")
             cell_by_gene_adata = self.convert_adata_to_cell_by_gene(expanded_adata)
+            # TODO: CK save AnnData object
+            # TODO: This save has to be moved to a place outside this for loop
+            # self.logger.info("<assign_bins_to_cells> save expanded_adata to '.h5ad' file")
+            expanded_adata.write_h5ad(
+                os.path.join(self.bin_assign_dir, chunk + ".h5ad")
+            )
             del expanded_adata
 
             # Save the gene to cell assignment results to a .csv file
@@ -956,6 +969,7 @@ class ENACT:
             self.logger.info(
                 f"<assign_bins_to_cells> Processed {chunk} using {self.bin_to_cell_method}. Mean count per cell: {chunk_gene_to_cell_assign_df.sum(axis=1).mean()}"
             )
+        
         self.logger.info(
             f"<assign_bins_to_cells> Successfully assigned bins to cells!"
         )
